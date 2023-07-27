@@ -11,9 +11,6 @@ from datetime import datetime, timedelta
 from os import environ as env
 import smtplib
 
-email_success = 'SUCCESS'
-email_failure = 'FAILURE'
-
 
 QUERY_CREATE_TABLE = '''
 CREATE TABLE IF NOT EXISTS finance_spark (
@@ -47,25 +44,34 @@ def get_process_date(**kwargs):
         )
     kwargs["ti"].xcom_push(key="process_date", value=process_date)
 
-def enviar_error():
-    enviar(email_failure)
+def success_callback_function(context):
+    dag_run = context.get("dag_run")
+    msg = "DAG ran successfully"
+    subject = f"DAG {dag_run} has completed"
+    send_email(msg, subject)
 
-def enviar_success():
-    enviar(email_success)
 
-def enviar(subject):
+def failure_callback_function(context):
+    dag_run = context.get("dag_run")
+    msg = "DAG ran failed"
+    subject = f"DAG {dag_run} has failed"
+    send_email(msg, subject)
+
+
+def send_email(msg, subject):
     try:
-        x=smtplib.SMTP('smtp.gmail.com',587)
+        x = smtplib.SMTP("smtp.gmail.com", 587)
         x.starttls()
-        x.login(Variable.get('SMTP_EMAIL_FROM'),Variable.get('SMTP_PASSWORD'))
-        subject=f'El dag termino en: {subject}'
-        body_text=subject
-        message='Subject: {}\n\n{}'.format(subject,body_text)
-        x.sendmail(Variable.get('SMTP_EMAIL_FROM'),Variable.get('SMTP_EMAIL_TO'),message)
-        print('Exito al enviar el mail')
+        x.login(Variable.get("SMTP_EMAIL_FROM"), Variable.get("SMTP_PASSWORD"))
+
+        message = "Subject: {}\n\n{}".format(subject, msg)
+        x.sendmail(
+            Variable.get("SMTP_EMAIL_FROM"), Variable.get("SMTP_EMAIL_TO"), message
+        )
+        print("Exito al enviar el mail")
     except Exception as exception:
         print(exception)
-        print('Fallo al enviar el mail')
+        print("Fallo al enviar el mail")
 
 defaul_args = {
     "owner": "Agustin Yanzón",
@@ -81,6 +87,8 @@ with DAG(
     description="ETL de la tabla finance",
     schedule_interval="@daily",
     catchup=False,
+    on_success_callback=success_callback_function,
+    on_failure_callback=failure_callback_function,
 ) as dag:
 
     get_process_date_task = PythonOperator(
@@ -112,16 +120,4 @@ with DAG(
         driver_class_path=Variable.get("driver_class_path"),
     )
 
-    envio_fallo=PythonOperator(
-        task_id='dag_envio_error',
-        python_callable=enviar_error,
-        trigger_rule='all_failed'
-    )
-    
-    envio_success=PythonOperator(
-        task_id='dag_envio_success',
-        python_callable=enviar_success,
-        trigger_rule='all_success'
-    )
-
-    get_process_date_task >> create_table >> clean_process_date >> spark_etl_finance >> [envio_fallo,envio_success]
+    get_process_date_task >> create_table >> clean_process_date >> spark_etl_finance 
