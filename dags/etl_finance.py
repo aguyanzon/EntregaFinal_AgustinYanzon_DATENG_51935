@@ -1,5 +1,3 @@
-# Este es el DAG que orquesta el ETL de la tabla users
-
 from airflow import DAG
 
 from airflow.operators.python_operator import PythonOperator
