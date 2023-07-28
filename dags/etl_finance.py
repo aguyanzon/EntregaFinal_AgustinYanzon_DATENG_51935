@@ -150,7 +150,6 @@ with DAG(
         conn_id="spark_default",
         dag=dag,
         driver_class_path=Variable.get("driver_class_path"),
-        do_xcom_push=True,
     )
 
     get_last_values_per_symbol = SQLExecuteQueryOperator(
