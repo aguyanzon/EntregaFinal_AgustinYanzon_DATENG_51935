@@ -2,6 +2,13 @@
 
 Este repositorio contiene un proyecto de Extracción, Transformación y Carga (ETL) que tiene como objetivo obtener datos del mercado financiero a través de una API en formato JSON, procesarlos mediante Apache Spark y finalmente cargar la información resultante en una tabla en Amazon Redshift. Todo el proceso está orquestado utilizando Apache Airflow, el cual además enviará notificaciones de los valores obtenidos al correo electrónico mediante el servicio SMTP.
 
+![Python](https://img.shields.io/badge/Python-blue?logo=python&logoColor=white)
+![Spark](https://img.shields.io/badge/Spark-E25A1C?logo=apache%20spark&logoColor=white)
+![Airflow](https://img.shields.io/badge/Airflow-017CEE?logo=apache%20airflow&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![Redshift](https://img.shields.io/badge/Redshift-E71A2A?logo=amazon%20redshift&logoColor=white)
+
+
 ## Desarrollo 
 Para el siguiente trabajo se extrajeron los datos de
 [Alpha Vantage](https://www.alphavantage.co/) que proporciona datos del mercado financiero de nivel empresarial. Para poder acceder a los datos es necesario generar una `API_KEY` que proporciona la página de manera gratuita.
@@ -97,11 +104,16 @@ JAVA_HOME: /usr/lib/jvm/java-11-openjdk-arm64/
 
     * `send_last_values_email_task`: Esta tarea ejecuta la función send_last_values_email mediante el operador PythonOperator. Su función es enviar un correo electrónico con los últimos valores obtenidos a los destinatarios especificados.
 
+    ![](assets/graph_airflow.png)
 ### Notificaciones
 * El DAG incluye dos notificaciones por correo electrónico para mantener a los usuarios informados sobre el progreso y los resultados del proceso ETL.
 
     * #### Notificación de Estado del DAG
     Se envía una notificación de estado del DAG después de su ejecución. Si el DAG se ejecuta correctamente, recibirás un correo electrónico con el asunto "DAG [nombre_del_DAG] has completed", indicando que el proceso ETL se completó sin errores. En caso de que ocurra una falla durante la ejecución del DAG, recibirás un correo electrónico con el asunto "DAG [nombre_del_DAG] has failed", lo que te permitirá identificar y abordar rápidamente cualquier problema que haya ocurrido.
 
+    ![](assets/success_msg.png)
+
     * #### Notificación de Últimos Valores de Acciones
     También recibirás una notificación con los últimos valores de cierre y variación con respecto al mes anterior de las acciones. Esta notificación incluirá los datos detallados de cada acción y su precio de cierre en la última fecha registrada, así como la variación porcentual con respecto al mes anterior.
+
+    ![](assets/actions_msg.png)
