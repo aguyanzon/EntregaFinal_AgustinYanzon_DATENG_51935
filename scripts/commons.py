@@ -71,7 +71,12 @@ class ETL_Spark:
         df_transformed = self.transform(df_api)
 
         # Cargamos los datos en Redshift
-        self.load(df_transformed)
+        df_final = self.load(df_transformed)
+
+        # Obtenemos resultados finales
+        result = self.get_last_data(df_final)
+
+        return result
 
     def extract(self):
         """
@@ -96,3 +101,9 @@ class ETL_Spark:
         Carga los datos transformados en Redshift
         """
         print(">>> [L] Cargando datos en Redshift...")
+
+    def get_last_data(self, df_final):
+        """
+        Carga los datos transformados en Redshift
+        """
+        print(">>> [O] Obteniendo valores de las acciones...")

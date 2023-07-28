@@ -44,6 +44,16 @@ def get_process_date(**kwargs):
         )
     kwargs["ti"].xcom_push(key="process_date", value=process_date)
 
+
+def get_last_values(**kwargs):
+    ti = kwargs["ti"]
+    last_values = ti.xcom_pull(task_ids="spark_etl_finance")
+    print(last_values)
+    msg = last_values
+    subject = "Ultimos valores de acciones"
+    send_email(msg, subject)
+    
+
 def success_callback_function(context):
     dag_run = context.get("dag_run")
     msg = "DAG ran successfully"
@@ -75,7 +85,7 @@ def send_email(msg, subject):
 
 defaul_args = {
     "owner": "Agustin Yanzón",
-    "start_date": datetime(2023, 7, 11),
+    "start_date": datetime(2023, 7, 27),
     "retries": 0,
     "retry_delay": timedelta(seconds=5),
     "catchup": False,
@@ -118,6 +128,14 @@ with DAG(
         conn_id="spark_default",
         dag=dag,
         driver_class_path=Variable.get("driver_class_path"),
+        do_xcom_push=True,
     )
 
-    get_process_date_task >> create_table >> clean_process_date >> spark_etl_finance 
+    last_values_task = PythonOperator(
+        task_id="last_values_task",
+        python_callable=get_last_values,
+        provide_context=True,
+        dag=dag,
+    )
+
+    get_process_date_task >> create_table >> clean_process_date >> spark_etl_finance >> last_values_task
