@@ -55,7 +55,7 @@ DRIVER_PATH=/tmp/drivers/postgresql-42.5.2.jar
 docker-compose up --build
 ```
 * ![Advertencia](https://img.shields.io/badge/-Advertencia-red)
-En el caso de utilizar una Mac con Chip M1 probablemente sea necesario agregar la siguiente variable de entorno en el docker-compose en `airflow-common-env` para no tener inconvenientes con la arquitectura en Java `airflow-common-env`, caso contrario no es necesario.
+En el caso de utilizar una Mac con Chip M1 probablemente sea necesario agregar la siguiente variable de entorno en el docker-compose en `airflow-common-env` para no tener inconvenientes con la arquitectura en Java.
 ```
 JAVA_HOME: /usr/lib/jvm/java-11-openjdk-arm64/
 ```
