@@ -58,7 +58,7 @@ def send_last_values_email(**kwargs):
     electrónico con la información.
     """
     ti = kwargs["ti"]
-    last_values = ti.xcom_pull(task_ids="select_action")
+    last_values = ti.xcom_pull(task_ids="get_last_values_per_symbol")
 
     subject = "Ultimos valores de acciones"
     msg = "\n".join(f"La accion {data[0]} para la fecha {data[1]} tuvo un precio de cierre de {float(data[2]):.2f} USD y su variacion respecto al mes anterior es de {float(data[3]):.2f} %" for data in last_values)
