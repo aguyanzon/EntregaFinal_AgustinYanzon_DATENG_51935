@@ -60,7 +60,7 @@ En el caso de utilizar una Mac con Chip M1 probablemente sea necesario agregar l
 JAVA_HOME: /usr/lib/jvm/java-11-openjdk-arm64/
 ```
 ### Configuración Airflow
-* Una vez que los servicios estén levantados, ingresar a Airflow en `http://localhost:8080/`.
+* Una vez que los servicios estén levantados, ingresar a Airflow en [http://localhost:8080/](http://localhost:8080/)
 * En la pestaña `Admin -> Connections` crear una nueva conexión con los siguientes datos para Redshift:
     * Conn Id: `redshift_default`
     * Conn Type: `Amazon Redshift`
