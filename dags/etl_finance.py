@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS finance_spark (
 QUERY_CLEAN_PROCESS_DATE = """
 DELETE FROM finance_spark WHERE process_date = '{{ ti.xcom_pull(key="process_date") }}';
 """
+
 QUERY_SELECT_ACTIONS = '''
 SELECT fs.symbol, fs.date_from AS last_date_from, fs."close" AS last_close, fs."monthly variation" AS last_monthly_variation
 FROM finance_spark fs
@@ -58,14 +59,10 @@ def get_process_date(**kwargs):
 def get_last_values(**kwargs):
     ti = kwargs["ti"]
     last_values = ti.xcom_pull(task_ids="select_action")
-    print(last_values)
 
     subject = "Ultimos valores de acciones"
-    msg = ""
-    for data in last_values:
-        symbol, date_from, close, monthly_variation = data
-        msg += f"La accion {symbol} para la fecha {date_from} tuvo un precio de cierre de {close} y su variación respecto al mes anterior es de {monthly_variation}\n"
-
+    msg = "\n".join(f"La accion {data[0]} para la fecha {data[1]} tuvo un precio de cierre de {float(data[2]):.2f} USD y su variacion respecto al mes anterior es de {float(data[3]):.2f} %" for data in last_values)
+    print(msg)
     send_email(msg, subject)
 
 
@@ -97,6 +94,7 @@ def send_email(msg, subject):
     except Exception as exception:
         print(exception)
         print("Fallo al enviar el mail")
+
 
 defaul_args = {
     "owner": "Agustin Yanzón",

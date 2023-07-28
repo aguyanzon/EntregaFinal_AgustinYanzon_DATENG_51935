@@ -100,34 +100,7 @@ class ETL_Finance(ETL_Spark):
         return df_final
     
     
-    def get_last_data(self, df_final):
-        """
-        Retorna un diccionario con la última fecha de date_from, el último valor de close y el último valor de monthly variation
-        para cada symbol.
-        """
-        print(">>> [E] Obteniendo últimos datos...")
 
-        # Obtener la última fecha de date_from, el último valor de close y el último valor de monthly variation
-        # para cada symbol utilizando funciones de agregación de Spark
-        last_data = df_final.groupby('symbol').agg(
-            {'date_from': 'max', 'close': 'last', 'monthly variation': 'last'}
-        ).collect()
-
-        # Crear el diccionario con los resultados
-        result = {}
-        for row in last_data:
-            symbol = row['symbol']
-            last_date_from = row['max(date_from)']
-            last_close = row['last(close)']
-            last_monthly_variation = row['last(monthly variation)']
-
-            result[symbol] = {
-                'last_date_from': last_date_from,
-                'last_close': last_close,
-                'last_monthly_variation': last_monthly_variation
-            }
-
-        return result
 
 if __name__ == "__main__":
     print("Corriendo script")
