@@ -29,6 +29,16 @@ CREATE TABLE IF NOT EXISTS finance_spark (
 QUERY_CLEAN_PROCESS_DATE = """
 DELETE FROM finance_spark WHERE process_date = '{{ ti.xcom_pull(key="process_date") }}';
 """
+QUERY_SELECT_ACTIONS = '''
+SELECT fs.symbol, fs.date_from AS last_date_from, fs."close" AS last_close, fs."monthly variation" AS last_monthly_variation
+FROM finance_spark fs
+INNER JOIN (
+    SELECT symbol, MAX(date_from) AS last_date
+    FROM finance_spark
+    GROUP BY symbol
+) last_dates
+ON fs.symbol = last_dates.symbol AND fs.date_from = last_dates.last_date;
+'''
 
 # create function to get process_date and push it to xcom
 def get_process_date(**kwargs):
@@ -47,12 +57,17 @@ def get_process_date(**kwargs):
 
 def get_last_values(**kwargs):
     ti = kwargs["ti"]
-    last_values = ti.xcom_pull(task_ids="spark_etl_finance")
+    last_values = ti.xcom_pull(task_ids="select_action")
     print(last_values)
-    msg = last_values
+
     subject = "Ultimos valores de acciones"
+    msg = ""
+    for data in last_values:
+        symbol, date_from, close, monthly_variation = data
+        msg += f"La accion {symbol} para la fecha {date_from} tuvo un precio de cierre de {close} y su variación respecto al mes anterior es de {monthly_variation}\n"
+
     send_email(msg, subject)
-    
+
 
 def success_callback_function(context):
     dag_run = context.get("dag_run")
@@ -131,6 +146,14 @@ with DAG(
         do_xcom_push=True,
     )
 
+    select_action = SQLExecuteQueryOperator(
+        task_id="select_action",
+        conn_id="redshift_default",
+        sql=QUERY_SELECT_ACTIONS,
+        dag=dag,
+        do_xcom_push=True,
+    )
+
     last_values_task = PythonOperator(
         task_id="last_values_task",
         python_callable=get_last_values,
@@ -138,4 +161,4 @@ with DAG(
         dag=dag,
     )
 
-    get_process_date_task >> create_table >> clean_process_date >> spark_etl_finance >> last_values_task
+    get_process_date_task >> create_table >> clean_process_date >> spark_etl_finance >> select_action >> last_values_task

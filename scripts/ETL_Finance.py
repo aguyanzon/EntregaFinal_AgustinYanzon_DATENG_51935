@@ -17,9 +17,7 @@ class ETL_Finance(ETL_Spark):
 
     def run(self):
         process_date = datetime.now().strftime("%Y-%m-%d")
-        final_result = self.execute(process_date)
-        print(final_result)
-        return final_result
+        self.execute(process_date)
 
     def extract(self, symbol):
         """
