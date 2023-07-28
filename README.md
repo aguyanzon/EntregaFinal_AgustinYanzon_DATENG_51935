@@ -62,20 +62,20 @@ JAVA_HOME: /usr/lib/jvm/java-11-openjdk-arm64/
 ### Configuración Airflow
 * Una vez que los servicios estén levantados, ingresar a Airflow en [http://localhost:8080/](http://localhost:8080/)
 * En la pestaña `Admin -> Connections` crear una nueva conexión con los siguientes datos para Redshift:
-    * Conn Id: `redshift_default`
-    * Conn Type: `Amazon Redshift`
-    * Host: `host de redshift`
-    * Database: `base de datos de redshift`
-    * Schema: `esquema de redshift`
-    * User: `usuario de redshift`
-    * Password: `contraseña de redshift`
-    * Port: `5439`
+    * `Conn Id`: redshift_default
+    * `Conn Type`: Amazon Redshift
+    * `Host`: host de redshift
+    * `Database`: base de datos de redshift
+    * `Schema`: esquema de redshift
+    * `User`: usuario de redshift
+    * `Password`: contraseña de redshift
+    * `Port`: 5439
 * En la pestaña `Admin -> Connections` crear una nueva conexión con los siguientes datos para Spark:
-    * Conn Id: `spark_default`
-    * Conn Type: `Spark`
-    * Host: `spark://spark`
-    * Port: `7077`
-    * Extra: `{"queue": "default"}`
+    * `Conn Id`: spark_default
+    * `Conn Type`: Spark
+    * `Host`: spark://spark
+    * `Port`: 7077
+    * `Extra`: {"queue": "default"}
 * En la pestaña `Admin -> Variables` crear las siguientes variables:
     * `driver_class_path` : /tmp/drivers/postgresql-42.5.2.jar
     * `spark_scripts_dir` : /opt/airflow/scripts
