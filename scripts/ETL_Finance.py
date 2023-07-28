@@ -67,7 +67,10 @@ class ETL_Finance(ETL_Spark):
             print("The DataFrame has duplicates.")
 
         window_spec = Window.partitionBy('symbol').orderBy('date_from')
-        df_original = df_original.withColumn('monthly variation', (col('close') - lag('close').over(window_spec)) / lag('close').over(window_spec) * 100)
+        df_original = df_original.withColumn(
+            'monthly variation', 
+            (col('close') - lag('close').over(window_spec)) / lag('close').over(window_spec) * 100
+        )
 
         return df_original
 
