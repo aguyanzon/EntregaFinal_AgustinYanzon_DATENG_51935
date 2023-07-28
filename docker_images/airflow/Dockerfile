@@ -22,4 +22,4 @@ RUN python -m pip install --upgrade pip
 COPY ./requirements.txt /
 RUN pip install -r /requirements.txt
 
-# docker build -t lucastrubiano/airflow:airflow_2_6_2 .
+# docker build -t aguyanzon/airflow:airflow_2_6_2 .
