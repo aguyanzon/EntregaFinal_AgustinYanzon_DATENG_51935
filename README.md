@@ -83,12 +83,17 @@ JAVA_HOME: /usr/lib/jvm/java-11-openjdk-arm64/
     * `Host`: spark://spark
     * `Port`: 7077
     * `Extra`: {"queue": "default"}
+
+![](assets/admin_connections.png)
+
 * En la pestaña `Admin -> Variables` crear las siguientes variables:
     * `driver_class_path` : /tmp/drivers/postgresql-42.5.2.jar
     * `spark_scripts_dir` : /opt/airflow/scripts
     * `SMTP_EMAIL_FROM` : dirección de correo electrónico del remitente para enviar alertas
     * `SMTP_EMAIL_TO` : dirección de correo electrónico del destinatario para recibir alertas
     * `SMTP_PASSWORD` : token de acceso para enviar mails ([Instrucciones](https://support.google.com/accounts/answer/185833?hl=es-419))
+
+![](assets/admin_variables.png)
 
 ### Ejecución del DAG
 * Una vez configurados todos los parámetros se debe ejecutar el DAG. El mismo realiza las siguientes tareas:
@@ -105,6 +110,7 @@ JAVA_HOME: /usr/lib/jvm/java-11-openjdk-arm64/
     * `send_last_values_email_task`: Esta tarea ejecuta la función send_last_values_email mediante el operador PythonOperator. Su función es enviar un correo electrónico con los últimos valores obtenidos a los destinatarios especificados.
 
     ![](assets/graph_airflow.png)
+
 ### Notificaciones
 * El DAG incluye dos notificaciones por correo electrónico para mantener a los usuarios informados sobre el progreso y los resultados del proceso ETL.
 
@@ -117,3 +123,8 @@ JAVA_HOME: /usr/lib/jvm/java-11-openjdk-arm64/
     También recibirás una notificación con los últimos valores de cierre y variación con respecto al mes anterior de las acciones. Esta notificación incluirá los datos detallados de cada acción y su precio de cierre en la última fecha registrada, así como la variación porcentual con respecto al mes anterior.
 
     ![](assets/actions_msg.png)
+
+### Redshift
+* Vista de la tabla `finance_spark` alojada en Redshift.
+
+![](assets/redshift.png)
