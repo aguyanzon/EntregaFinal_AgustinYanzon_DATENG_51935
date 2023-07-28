@@ -38,7 +38,7 @@ ON fs.symbol = last_dates.symbol AND fs.date_from = last_dates.last_date;
 
 def get_process_date(**kwargs):
     """
-    Obtiene la fecha de proceso del DAG y la almacena en XCom.
+    Get the process date from the DAG and store it in XCom.
     """
     if (
         "process_date" in kwargs["dag_run"].conf
@@ -54,13 +54,12 @@ def get_process_date(**kwargs):
 
 def send_last_values_email(**kwargs):
     """
-    Obtiene los últimos valores de acciones desde XCom y envía un correo 
-    electrónico con la información.
+    Get the last values of stocks from XCom and send an email with the information.
     """
     ti = kwargs["ti"]
     last_values = ti.xcom_pull(task_ids="get_last_values_per_symbol")
 
-    subject = "Ultimos valores de acciones"
+    subject = "Actualizacion del mercado de valores: Ultimos valores de acciones seleccionadas"
     msg = "\n".join(f"La accion {data[0]} para la fecha {data[1]} tuvo un precio de cierre de {float(data[2]):.2f} USD y su variacion respecto al mes anterior es de {float(data[3]):.2f} %" for data in last_values)
     
     send_email(msg, subject)
@@ -68,27 +67,31 @@ def send_last_values_email(**kwargs):
 
 def on_success_callback(context):
     """
-    Función de devolución de llamada para ejecutar cuando el DAG se ejecuta correctamente.
+    Callback function to execute when the DAG runs successfully.
     """
     dag_run = context.get("dag_run")
-    msg = "DAG ran successfully"
-    subject = f"DAG {dag_run} has completed"
+    execution_date = dag_run.execution_date
+    dag_id = dag_run.dag_id
+    msg = f"DAG {dag_id} has successfully completed on {execution_date}."
+    subject = f"Success: DAG {dag_run} completed"
     send_email(msg, subject)
 
 
 def on_failure_callback(context):
     """
-    Función de devolución de llamada para ejecutar cuando el DAG falla.
+    Callback function to execute when the DAG fails.
     """
     dag_run = context.get("dag_run")
-    msg = "DAG ran failed"
-    subject = f"DAG {dag_run} has failed"
+    execution_date = dag_run.execution_date
+    dag_id = dag_run.dag_id
+    msg = f"DAG {dag_id} has failed on {execution_date}."
+    subject = f"Failure: DAG {dag_run} has failed"
     send_email(msg, subject)
 
 
 def send_email(msg, subject):
     """
-    Envía un correo electrónico utilizando el servidor SMTP de Gmail.
+    Send an email using the Gmail SMTP server.
     """
     try:
         x = smtplib.SMTP("smtp.gmail.com", 587)

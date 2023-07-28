@@ -15,17 +15,15 @@ class ETL_Finance(ETL_Spark):
 
     def run(self):
         """
-        Método para iniciar la ejecución del proceso ETL.
+        Method to start the execution of the ETL process.
         """
         process_date = datetime.now().strftime("%Y-%m-%d")
         self.execute(process_date)
 
     def extract(self, symbol):
         """
-        Extrae datos de la API para un símbolo específico.
+        Extract data from the API for a specific symbol.
         """
-        print(">>> [E] Extrayendo datos de la API...")
-
         try:
             url = f'https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol={symbol}&apikey={env["API_KEY"]}'
             response = requests.get(url)
@@ -42,15 +40,13 @@ class ETL_Finance(ETL_Spark):
             return df
 
         except requests.exceptions.RequestException as e:
-            print(f"Error de solicitud: {e}")
+            print(f"Request error: {e}")
             return None
     
     def union_data(self):
         """
-        Combina los datos extraídos para diferentes símbolos en un solo DataFrame.
+        Combine the extracted data for different symbols into a single DataFrame.
         """
-        print(">>> [E] Concatenando DataFrames...")
-
         data_ibm = self.extract('IBM')
         data_aapl = self.extract('AAPL')
         data_tsla = self.extract('TSLA')
@@ -60,18 +56,15 @@ class ETL_Finance(ETL_Spark):
 
     def transform(self, df_original):
         """
-        Realiza transformaciones en los datos originales.
+        Perform transformations on the original data.
         """
-        print(">>> [T] Transformando datos...")
-
         total_rows = df_original.count()
         distinct_rows = df_original.dropDuplicates().count()
 
-        # Compara la cantidad de filas antes y después de eliminar los duplicados
         if total_rows == distinct_rows:
-            print("El DataFrame no tiene duplicados.")
+            print("The DataFrame has no duplicates.")
         else:
-            print("El DataFrame tiene duplicados.")
+            print("The DataFrame has duplicates.")
 
         window_spec = Window.partitionBy('symbol').orderBy('date_from')
         df_original = df_original.withColumn('monthly variation', (col('close') - lag('close').over(window_spec)) / lag('close').over(window_spec) * 100)
@@ -80,10 +73,8 @@ class ETL_Finance(ETL_Spark):
 
     def load(self, df_final):
         """
-        Carga los datos transformados en Redshift
+        Load the transformed data into Redshift.
         """
-        print(">>> [L] Cargando datos en Redshift...")
-
         df_final = df_final.withColumn("process_date", lit(self.process_date))
         
         df_final.write \
@@ -96,12 +87,11 @@ class ETL_Finance(ETL_Spark):
             .mode("append") \
             .save()
         
-        print(">>> [L] Datos cargados exitosamente")
+        print(">>> [L] Data loaded successfully")
 
         return df_final
     
-
 if __name__ == "__main__":
-    print("Corriendo script")
+    print("Running script")
     etl = ETL_Finance()
     etl.run()
