@@ -1,14 +1,9 @@
 from airflow import DAG
-
 from airflow.operators.python_operator import PythonOperator
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-
-
 from airflow.models import Variable
-
 from datetime import datetime, timedelta
-from os import environ as env
 import smtplib
 
 
@@ -26,11 +21,11 @@ CREATE TABLE IF NOT EXISTS finance_spark (
 ) sortkey(date_from);
 '''
 
-QUERY_CLEAN_PROCESS_DATE = """
+QUERY_CLEAN_PROCESS_DATE = '''
 DELETE FROM finance_spark WHERE process_date = '{{ ti.xcom_pull(key="process_date") }}';
-"""
+'''
 
-QUERY_SELECT_ACTIONS = '''
+QUERY_GET_LAST_VALUES_PER_SYMBOL = '''
 SELECT fs.symbol, fs.date_from AS last_date_from, fs."close" AS last_close, fs."monthly variation" AS last_monthly_variation
 FROM finance_spark fs
 INNER JOIN (
@@ -41,9 +36,10 @@ INNER JOIN (
 ON fs.symbol = last_dates.symbol AND fs.date_from = last_dates.last_date;
 '''
 
-# create function to get process_date and push it to xcom
 def get_process_date(**kwargs):
-    # If process_date is provided take it, otherwise take today
+    """
+    Obtiene la fecha de proceso del DAG y la almacena en XCom.
+    """
     if (
         "process_date" in kwargs["dag_run"].conf
         and kwargs["dag_run"].conf["process_date"] is not None
@@ -56,24 +52,34 @@ def get_process_date(**kwargs):
     kwargs["ti"].xcom_push(key="process_date", value=process_date)
 
 
-def get_last_values(**kwargs):
+def send_last_values_email(**kwargs):
+    """
+    Obtiene los últimos valores de acciones desde XCom y envía un correo 
+    electrónico con la información.
+    """
     ti = kwargs["ti"]
     last_values = ti.xcom_pull(task_ids="select_action")
 
     subject = "Ultimos valores de acciones"
     msg = "\n".join(f"La accion {data[0]} para la fecha {data[1]} tuvo un precio de cierre de {float(data[2]):.2f} USD y su variacion respecto al mes anterior es de {float(data[3]):.2f} %" for data in last_values)
-    print(msg)
+    
     send_email(msg, subject)
 
 
-def success_callback_function(context):
+def on_success_callback(context):
+    """
+    Función de devolución de llamada para ejecutar cuando el DAG se ejecuta correctamente.
+    """
     dag_run = context.get("dag_run")
     msg = "DAG ran successfully"
     subject = f"DAG {dag_run} has completed"
     send_email(msg, subject)
 
 
-def failure_callback_function(context):
+def on_failure_callback(context):
+    """
+    Función de devolución de llamada para ejecutar cuando el DAG falla.
+    """
     dag_run = context.get("dag_run")
     msg = "DAG ran failed"
     subject = f"DAG {dag_run} has failed"
@@ -81,6 +87,9 @@ def failure_callback_function(context):
 
 
 def send_email(msg, subject):
+    """
+    Envía un correo electrónico utilizando el servidor SMTP de Gmail.
+    """
     try:
         x = smtplib.SMTP("smtp.gmail.com", 587)
         x.starttls()
@@ -110,8 +119,8 @@ with DAG(
     description="ETL de la tabla finance",
     schedule_interval="@daily",
     catchup=False,
-    on_success_callback=success_callback_function,
-    on_failure_callback=failure_callback_function,
+    on_success_callback=on_success_callback,
+    on_failure_callback=on_failure_callback,
 ) as dag:
 
     get_process_date_task = PythonOperator(
@@ -144,19 +153,20 @@ with DAG(
         do_xcom_push=True,
     )
 
-    select_action = SQLExecuteQueryOperator(
-        task_id="select_action",
+    get_last_values_per_symbol = SQLExecuteQueryOperator(
+        task_id="get_last_values_per_symbol",
         conn_id="redshift_default",
-        sql=QUERY_SELECT_ACTIONS,
+        sql=QUERY_GET_LAST_VALUES_PER_SYMBOL,
         dag=dag,
         do_xcom_push=True,
     )
 
-    last_values_task = PythonOperator(
-        task_id="last_values_task",
-        python_callable=get_last_values,
+    send_last_values_email_task = PythonOperator(
+        task_id="send_last_values_email",
+        python_callable=send_last_values_email,
         provide_context=True,
         dag=dag,
     )
 
-    get_process_date_task >> create_table >> clean_process_date >> spark_etl_finance >> select_action >> last_values_task
+    get_process_date_task >> create_table >> clean_process_date >> spark_etl_finance
+    spark_etl_finance >> get_last_values_per_symbol >> send_last_values_email_task

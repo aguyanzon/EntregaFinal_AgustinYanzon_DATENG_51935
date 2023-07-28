@@ -1,5 +1,3 @@
-# Este script está pensado para correr en Spark y hacer el proceso de ETL de la tabla users
-
 import requests
 from datetime import datetime, timedelta
 from os import environ as env
@@ -16,12 +14,15 @@ class ETL_Finance(ETL_Spark):
         self.process_date = datetime.now().strftime("%Y-%m-%d")
 
     def run(self):
+        """
+        Método para iniciar la ejecución del proceso ETL.
+        """
         process_date = datetime.now().strftime("%Y-%m-%d")
         self.execute(process_date)
 
     def extract(self, symbol):
         """
-        Extrae datos de la API
+        Extrae datos de la API para un símbolo específico.
         """
         print(">>> [E] Extrayendo datos de la API...")
 
@@ -44,8 +45,10 @@ class ETL_Finance(ETL_Spark):
             print(f"Error de solicitud: {e}")
             return None
     
-    
     def union_data(self):
+        """
+        Combina los datos extraídos para diferentes símbolos en un solo DataFrame.
+        """
         print(">>> [E] Concatenando DataFrames...")
 
         data_ibm = self.extract('IBM')
@@ -55,10 +58,9 @@ class ETL_Finance(ETL_Spark):
 
         return data
 
-
     def transform(self, df_original):
         """
-        Transforma los datos
+        Realiza transformaciones en los datos originales.
         """
         print(">>> [T] Transformando datos...")
 
@@ -75,7 +77,6 @@ class ETL_Finance(ETL_Spark):
         df_original = df_original.withColumn('monthly variation', (col('close') - lag('close').over(window_spec)) / lag('close').over(window_spec) * 100)
 
         return df_original
-
 
     def load(self, df_final):
         """
@@ -99,8 +100,6 @@ class ETL_Finance(ETL_Spark):
 
         return df_final
     
-    
-
 
 if __name__ == "__main__":
     print("Corriendo script")
